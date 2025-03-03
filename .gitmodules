@@ -1,0 +1,3 @@
+[submodule "external/fruit"]
+	path = external/fruit
+	url = https://github.com/google/fruit.git
