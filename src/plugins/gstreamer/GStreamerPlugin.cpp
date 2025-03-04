@@ -21,18 +21,26 @@ std::thread::id GStreamerPlugin::GetThreadId() const {
 }
 
 void GStreamerPlugin::Init() {
-    (*logger) << "[GStreamerPlugin] Initialized." << std::endl;
+    (*logger) << "[GStreamerPlugin]::Init() Initialized." << std::endl;
 
     eventService->Subscribe("PlayAudio", [this](const std::string& uri) {
+        (*this->logger) << "[GStreamerPlugin]::Init() PlayAudio event received: " << uri << std::endl;
         this->Play(uri);
     });
 
     eventService->Subscribe("PauseAudio", [this](const std::string&) {
+        (*this->logger) << "[GStreamerPlugin]::Init() PauseAudio event received." << std::endl;
         this->Pause();
     });
 
     eventService->Subscribe("ResumeAudio", [this](const std::string&) {
+        (*this->logger) << "[GStreamerPlugin]::Init() ResumeAudio event received." << std::endl;
         this->Resume();
+    });
+
+    eventService->Subscribe("StopAudio", [this](const std::string&) {
+        (*this->logger) << "[GStreamerPlugin]::Init() StopAudio event received." << std::endl;
+        this->Stop();
     });
 }
 
