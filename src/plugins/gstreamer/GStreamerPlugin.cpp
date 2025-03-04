@@ -149,7 +149,7 @@ void GStreamerPlugin::OnBusMessage(GstBus* bus, GstMessage* msg, gpointer data) 
 
     switch (GST_MESSAGE_TYPE(msg)) {
         case GST_MESSAGE_EOS:
-            (*plugin->logger) << "[GStreamerPlugin] End of stream reached!" << std::endl;
+            (*plugin->logger) << "[GStreamerPlugin]::OnBusMessage End of stream reached!" << std::endl;
             plugin->Stop();
             // plugin->eventService->Trigger("PlaybackFinished", "Playback completed successfully");
             break;
@@ -157,7 +157,7 @@ void GStreamerPlugin::OnBusMessage(GstBus* bus, GstMessage* msg, gpointer data) 
             GError* err;
             gchar* debug;
             gst_message_parse_error(msg, &err, &debug);
-            (*plugin->logger) << "[GStreamerPlugin] Error: " << err->message << std::endl;
+            (*plugin->logger) << "[GStreamerPlugin]::OnBusMessage Error: " << err->message << std::endl;
             // (*plugin->eventService).Trigger("PlaybackError", err->message);
             g_error_free(err);
             g_free(debug);
