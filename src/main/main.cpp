@@ -99,11 +99,15 @@ int main() {
     eventService->Trigger("StopAudio");
 
     // Wait for termination signal using condition_variable
-    {
-        std::cout << "[Main] Waiting for shutdown signal..." << std::endl;
-        std::unique_lock<std::mutex> lock(shutdownMutex);
-        shutdownCondition.wait(lock, [] { return !isRunning; });
+    while (isRunning) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        (*loggerService) << "[Main] Running..." << std::endl;
     }
+    // {
+    //     std::cout << "[Main] Waiting for shutdown signal..." << std::endl;
+    //     std::unique_lock<std::mutex> lock(shutdownMutex);
+    //     shutdownCondition.wait(lock, [] { return !isRunning; });
+    // }
 
     (*loggerService) << "[Main] Stopping plugins in correct order..." << std::endl;
 
