@@ -89,7 +89,14 @@ int main() {
     eventService->Trigger("OnStart");
     eventService->Trigger("PlayAudio", "file:///Users/aklen/Music/Ableton/Projects/647 Project/export/647.mp3");
 
-    (*loggerService) << "[Main] GStreamer playback started." << std::endl;
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    eventService->Trigger("PauseAudio");
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    eventService->Trigger("ResumeAudio");
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    eventService->Trigger("StopAudio");
 
     // Wait for termination signal using condition_variable
     {
