@@ -42,24 +42,6 @@ void EventService::Stop() {
     eventCondition.notify_all();  // Wake up the worker thread to allow it to exit
 
     (*logger) << "[EventService]::Stop() Checking if event thread should join:" << eventThread.joinable() << std::endl;
-    while (true) {
-        std::pair<std::string, std::string> event;
-        {
-            std::lock_guard<std::mutex> lock(eventMutex);
-            if (eventQueue.empty()) {
-                break;  // Exit if no more events to process
-            }
-            event = eventQueue.front();
-            eventQueue.pop();
-        }
-
-        if (subscribers.find(event.first) != subscribers.end()) {
-            for (const auto& callback : subscribers[event.first]) {
-                callback(event.second);
-            }
-        }
-    }
-
     if (eventThread.joinable()) {
         (*logger) << "[EventService]::Stop() Joining event thread..." << std::endl;
         eventThread.join();
@@ -70,25 +52,25 @@ void EventService::Stop() {
 
 void EventService::EventLoop() {
     while (running) {
-        std::pair<std::string, std::string> event;
-        {
-            std::unique_lock<std::mutex> lock(eventMutex);
-            eventCondition.wait(lock, [this] { return !eventQueue.empty() || !running; });
+        std::unique_lock<std::mutex> lock(eventMutex);
+        eventCondition.wait(lock, [this] { return !running || !eventQueue.empty(); });
 
-            if (!running && eventQueue.empty()) {
-                break;
-            }
-
-            event = eventQueue.front();
-            eventQueue.pop();
+        if (!running && eventQueue.empty()) {
+            break;
         }
 
-        // Call the event handlers
-        std::lock_guard<std::mutex> lock(eventMutex);
-        if (subscribers.find(event.first) != subscribers.end()) {
-            for (const auto& callback : subscribers[event.first]) {
-                callback(event.second);
+        // Process events
+        while (!eventQueue.empty()) {
+            auto event = eventQueue.front();
+            eventQueue.pop();
+
+            lock.unlock(); 
+            if (subscribers.find(event.first) != subscribers.end()) {
+                for (const auto& callback : subscribers[event.first]) {
+                    callback(event.second);
+                }
             }
+            lock.lock();
         }
     }
 
