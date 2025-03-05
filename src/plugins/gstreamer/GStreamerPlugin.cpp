@@ -46,92 +46,116 @@ void GStreamerPlugin::Init() {
 
 void GStreamerPlugin::Run() {
     (*logger) << "[GStreamerPlugin] Running..." << std::endl;
+    while (true)
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(20));
+	}
 }
 
 void GStreamerPlugin::Play(const std::string& uri) {
     std::string cleanedUri = UrlUtils::ToFileUri(uri);
     if (cleanedUri.empty()) {
-        (*logger) << "[GStreamerPlugin] Invalid file path: " << cleanedUri << std::endl;
+        (*logger) << "[GStreamerPlugin]::Play() Invalid file path: " << cleanedUri << std::endl;
         return;
     }
 
-    (*logger) << "[GStreamerPlugin] Original URI: " << uri << std::endl;
-    (*logger) << "[GStreamerPlugin] Cleaned URI: " << cleanedUri << std::endl;
+    (*logger) << "[GStreamerPlugin]::Play() Original URI: " << uri << std::endl;
+    (*logger) << "[GStreamerPlugin]::Play() Cleaned URI: " << cleanedUri << std::endl;
 
     pipeline = gst_parse_launch(("playbin uri=" + cleanedUri).c_str(), nullptr);
     if (!pipeline) {
-        (*logger) << "[GStreamerPlugin] Failed to create pipeline!" << std::endl;
+        (*logger) << "[GStreamerPlugin]::Play() Failed to create pipeline!" << std::endl;
         return;
     }
 
-    (*logger) << "[GStreamerPlugin] Setting up GStreamer bus..." << std::endl;
+    (*logger) << "[GStreamerPlugin]::Play() Setting up GStreamer bus..." << std::endl;
     GstBus* bus = gst_element_get_bus(pipeline);
     gst_bus_add_watch(bus, (GstBusFunc)OnBusMessage, this);
     gst_object_unref(bus);
-    (*logger) << "[GStreamerPlugin] Bus watch added." << std::endl;
+    (*logger) << "[GStreamerPlugin]::Play() Bus watch added." << std::endl;
 
     // start playback in a separate thread
     std::thread([this] {
-        (*logger) << "[GStreamerPlugin] Changing state to PLAYING..." << std::endl;
+        (*logger) << "[GStreamerPlugin]::Play() Changing state to PLAYING..." << std::endl;
         gst_element_set_state(pipeline, GST_STATE_PLAYING);
         running = true;
 
         eventService->Trigger("PlaybackStarted", "Playback started");
-        (*logger) << "[GStreamerPlugin] Playback started." << std::endl;
+        (*logger) << "[GStreamerPlugin]::Play() Playback started." << std::endl;
 
         // gstThread = std::thread(&GStreamerPlugin::GStreamerMainLoop, this);
-        // (*logger) << "[GStreamerPlugin] GStreamer main loop thread started." << std::endl;
+        // (*logger) << "[GStreamerPlugin]::Play() GStreamer main loop thread started." << std::endl;
     }).detach();
 }
 
-void GStreamerPlugin::Stop() {
-    if (!running) {
-        (*logger) << "[GStreamerPlugin] Stop called, but playback is already stopped." << std::endl;
+void GStreamerPlugin::Stop(bool force) {
+    if (!running && !force) {
+        (*logger) << "[GStreamerPlugin]::Stop() Stop called, but playback is already stopped." << std::endl;
         return;
     }
 
-    (*logger) << "[GStreamerPlugin] Stopping playback..." << std::endl;
+    (*logger) << "[GStreamerPlugin]::Stop() Stopping playback..." << std::endl;
     running = false; // Mark playback as stopped
 
     if (pipeline) {
-        (*logger) << "[GStreamerPlugin] Changing state to NULL..." << std::endl;
+        (*logger) << "[GStreamerPlugin]::Stop() Changing state to NULL..." << std::endl;
         gst_element_set_state(pipeline, GST_STATE_NULL); // Stop the pipeline
-        (*logger) << "[GStreamerPlugin] Pipeline state changed to NULL." << std::endl;
+        (*logger) << "[GStreamerPlugin]::Stop() Pipeline state changed to NULL." << std::endl;
 
+
+        (*logger) << "[GStreamerPlugin]::Stop() Removing bus watch..." << std::endl;
+        GstBus* bus = gst_element_get_bus(pipeline);
+        gst_bus_remove_watch(bus);
+        gst_object_unref(bus);
+        (*logger) << "[GStreamerPlugin]::Stop() Bus watch removed." << std::endl;
+
+        // Send a final message to the pipeline
+        gst_element_post_message(pipeline, gst_message_new_application(GST_OBJECT(pipeline), gst_structure_new_empty("shutdown")));
+
+        (*logger) << "[GStreamerPlugin]::Stop() Unref'ing pipeline..." << std::endl;
         gst_object_unref(pipeline); // Unref the pipeline
-
         pipeline = nullptr; // Set the pipeline to null, prevent double-free
-        (*logger) << "[GStreamerPlugin] Pipeline stopped and freed." << std::endl;
+        (*logger) << "[GStreamerPlugin]::Stop() Pipeline stopped and freed." << std::endl;
+
+
+        eventService->Trigger("PlaybackStopped", "Playback stopped");
     }
 
-    eventService->Trigger("PlaybackStopped", "Playback stopped");
-
-    // (*logger) << "[GStreamerPlugin] Waiting for GStreamer thread to join..." << std::endl;
-    // if (gstThread.joinable()) {
-    //     (*logger) << "[GStreamerPlugin] Joining playback thread..." << std::endl;
-    //     gstThread.join();
-    // }
-    // (*logger) << "[GStreamerPlugin] GStreamer thread joined." << std::endl;
-
-    (*logger) << "[GStreamerPlugin] Playback stopped completely." << std::endl;
+    (*logger) << "[GStreamerPlugin]::Stop() Checking if GStreamer thread should join..." << std::endl;
+    if (gstThread.joinable()) {
+        (*logger) << "[GStreamerPlugin]::Stop() Joining playback thread..." << std::endl;
+        gstThread.join();
+        (*logger) << "[GStreamerPlugin]::Stop() Playback thread joined." << std::endl;
+    } else {
+        (*logger) << "[GStreamerPlugin]::Stop() No thread to join." << std::endl;
+    }
+    (*logger) << "[GStreamerPlugin]::Stop() Playback stopped." << std::endl;
 }
 
 void GStreamerPlugin::Destroy() {
-    (*logger) << "[GStreamerPlugin] Destroying..." << std::endl;
-    Stop();
+    (*logger) << "[GStreamerPlugin]::Destroy() Destroying..." << std::endl;
+    Stop(true);
+    (*logger) << "[GStreamerPlugin]::Destroy() Stopped." << std::endl;
     gst_deinit();
+    (*logger) << "[GStreamerPlugin]::Destroy() Deinitialized." << std::endl;
+}
+
+GStreamerPlugin::~GStreamerPlugin() {
+    (*logger) << "[GStreamerPlugin]::~GStreamerPlugin() Destructor called." << std::endl;
+    Destroy();
+    (*logger) << "[GStreamerPlugin]::~GStreamerPlugin() Destroyed." << std::endl;
 }
 
 void GStreamerPlugin::Pause() {
     if (pipeline && running) {
-        (*logger) << "[GStreamerPlugin] Pausing playback..." << std::endl;
+        (*logger) << "[GStreamerPlugin]::Pause() Pausing playback..." << std::endl;
         gst_element_set_state(pipeline, GST_STATE_PAUSED);
     }
 }
 
 void GStreamerPlugin::Resume() {
     if (pipeline && running) {
-        (*logger) << "[GStreamerPlugin] Resuming playback..." << std::endl;
+        (*logger) << "[GStreamerPlugin]::Resume() Resuming playback..." << std::endl;
         gst_element_set_state(pipeline, GST_STATE_PLAYING);
     }
 }
@@ -139,9 +163,42 @@ void GStreamerPlugin::Resume() {
 // --- Private methods ---
 
 void GStreamerPlugin::GStreamerMainLoop() {
+    // while (running) {
+    //     std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    // }
+
+    GstBus* bus = gst_element_get_bus(pipeline);
+    GstMessage* msg;
+
     while (running) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        (*logger) << "[GStreamerPlugin]::GStreamerMainLoop() Waiting for messages..." << std::endl;
+        msg = gst_bus_timed_pop_filtered(bus, GST_SECOND, static_cast<GstMessageType>(GST_MESSAGE_ERROR | GST_MESSAGE_EOS | GST_MESSAGE_STATE_CHANGED | GST_MESSAGE_APPLICATION));
+
+        if (msg != nullptr) {
+            (*logger) << "[GStreamerPlugin]::GStreamerMainLoop() Message received: " << GST_MESSAGE_TYPE_NAME(msg) << std::endl;
+
+            // 🔥 Ha a shutdown üzenetet kapjuk, kilépünk a loopból!
+            if (GST_MESSAGE_TYPE(msg) == GST_MESSAGE_APPLICATION) {
+                (*logger) << "[GStreamerPlugin]::GStreamerMainLoop() Shutdown message received, exiting..." << std::endl;
+                gst_message_unref(msg);
+                break;
+            }
+
+            OnBusMessage(bus, msg, this);
+            gst_message_unref(msg);
+        } else {
+            (*logger) << "[GStreamerPlugin]::GStreamerMainLoop() Timeout, checking running flag..." << std::endl;
+        }
+
+        if (!running) {
+            (*logger) << "[GStreamerPlugin]::GStreamerMainLoop() Exiting loop..." << std::endl;
+            break;
+        }
     }
+
+    gst_object_unref(bus);
+    (*logger) << "[GStreamerPlugin]::GStreamerMainLoop() Exiting..." << std::endl;
+    
 }
 
 void GStreamerPlugin::OnBusMessage(GstBus* bus, GstMessage* msg, gpointer data) {

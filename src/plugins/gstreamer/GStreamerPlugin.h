@@ -13,6 +13,7 @@
 class GStreamerPlugin : public IPlugin {
 public:
     INJECT(GStreamerPlugin(IEventService* eventService, ILoggerService* logger));
+    ~GStreamerPlugin() override;
 
     void Init() override;
     void Run() override;
@@ -22,7 +23,7 @@ public:
     std::thread::id GetThreadId() const override;
 
     void Play(const std::string& uri);  // Play a file or URL
-    void Stop();  // Stop the current playback
+    void Stop(bool force = false);  // Stop the current playback
     void Pause();  // Pause the current playback
     void Resume();  // Resume the current playback
 
