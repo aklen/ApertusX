@@ -9,6 +9,7 @@ Apertus is a plugin-based system designed to initialize and run plugins in separ
 - 🚀 **Multithreaded Plugin Execution**: Each plugin runs in its own thread.
 - ⏳ **Synchronized Initialization**: Ensures all plugins are initialized before execution.
 - 🔄 **Event-Driven Execution**: Uses an `EventService` to handle events.
+- ⚡ **Async Event Processing**: Plugins receive and handle events independently, even if their `Run()` method executes long-running tasks.
 - 📜 **Logging System**: Thread-safe logging with a custom `LoggerService`.
 
 
