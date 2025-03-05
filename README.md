@@ -15,10 +15,10 @@ Apertus is a plugin-based system designed to initialize and run plugins in separ
 ## 🔧 Build and Run
 
 ### Prerequisites
-- C++17 or later
-- CMake
-- Clang (or GCC)
-- Fruit (DI framework)
+- [C++17](https://en.cppreference.com/w/cpp/17) or later
+- [CMake](https://cmake.org/)
+- [Clang](https://clang.llvm.org/) (or [GCC](https://gcc.gnu.org/))
+- [Fruit](https://github.com/google/fruit) (DI framework)
 
 ### Build Instructions
 ```sh
