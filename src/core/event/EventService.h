@@ -2,6 +2,7 @@
 #define EVENTSERVICE_H
 
 #include "interfaces/IEventService.h"
+#include "interfaces/ILoggerService.h"
 #include <unordered_map>
 #include <vector>
 #include <functional>
@@ -14,7 +15,7 @@
 
 class EventService : public IEventService {
 public:
-    INJECT(EventService()) = default;
+    INJECT(EventService(ILoggerService* logger));
 
     void Subscribe(const std::string& event, EventCallback callback) override;
     void Trigger(const std::string& event, const std::string& param = "") override;
@@ -22,6 +23,8 @@ public:
     void Stop() override;
 
 private:
+    ILoggerService* logger;
+
     std::unordered_map<std::string, std::vector<EventCallback>> subscribers;
     std::queue<std::pair<std::string, std::string>> eventQueue;
     std::mutex eventMutex;
