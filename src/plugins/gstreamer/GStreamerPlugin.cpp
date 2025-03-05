@@ -135,9 +135,7 @@ void GStreamerPlugin::Stop(bool force) {
 void GStreamerPlugin::Destroy() {
     (*logger) << "[GStreamerPlugin]::Destroy() Destroying..." << std::endl;
     Stop(true);
-    (*logger) << "[GStreamerPlugin]::Destroy() Stopped." << std::endl;
-    gst_deinit();
-    (*logger) << "[GStreamerPlugin]::Destroy() Deinitialized." << std::endl;
+    (*logger) << "[GStreamerPlugin]::Destroy() Destroyed." << std::endl;
 }
 
 GStreamerPlugin::~GStreamerPlugin() {
