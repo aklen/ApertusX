@@ -4,7 +4,7 @@ Apertus is a plugin-based system designed to initialize and run plugins in separ
 
 
 ## Features
--   **Dependency Injection** (via [Fruit](https://github.com/google/fruit))
+- 🏗️ **Dependency Injection** (via [Fruit](https://github.com/google/fruit))
 - 🧩 **Plugin Registration**: Dynamically register plugins.
 - 🚀 **Multithreaded Plugin Execution**: Each plugin runs in its own thread.
 - ⏳ **Synchronized Initialization**: Ensures all plugins are initialized before execution.
