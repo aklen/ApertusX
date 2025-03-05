@@ -46,10 +46,10 @@ void GStreamerPlugin::Init() {
 
 void GStreamerPlugin::Run() {
     (*logger) << "[GStreamerPlugin] Running..." << std::endl;
-    while (true)
-	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(20));
-	}
+    // while (running)
+	// {
+	// 	std::this_thread::sleep_for(std::chrono::milliseconds(20));
+	// }
 }
 
 void GStreamerPlugin::Play(const std::string& uri) {
