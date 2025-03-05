@@ -4,6 +4,10 @@
 MyPlugin::MyPlugin(IEventService* eventService, ILoggerService* logger)
     : eventService(eventService), logger(logger), running(false) {}
 
+MyPlugin::~MyPlugin() {
+    (*logger) << "[MyPlugin] Destructor called." << std::endl;
+}
+
 std::string MyPlugin::GetName() const {
     return "MyPlugin";
 }

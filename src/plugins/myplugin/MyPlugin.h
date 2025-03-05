@@ -11,7 +11,7 @@
 class MyPlugin : public IPlugin {
 public:
     INJECT(MyPlugin(IEventService* eventService, ILoggerService* logger));
-    // ~MyPlugin() override = default;
+    ~MyPlugin() override;
 
     void Init() override;
     void Run() override;
