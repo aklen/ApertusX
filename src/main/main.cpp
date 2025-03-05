@@ -27,6 +27,7 @@ void SignalHandler(int signal) {
         isRunning = false;
     }
     shutdownCondition.notify_one();
+    // shutdownCondition.notify_all();
 }
 
 int main() {
@@ -102,6 +103,7 @@ int main() {
     while (isRunning) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         (*loggerService) << "[Main] Running..." << std::endl;
+        eventService->Trigger("CustomEvent");
     }
     // {
     //     std::cout << "[Main] Waiting for shutdown signal..." << std::endl;
@@ -113,7 +115,9 @@ int main() {
 
     pluginService->StopPlugins();
 
+    (*loggerService) << "[Main] Stopping EventService..." << std::endl;
     eventService->Stop();  // Stop the event loop
+    (*loggerService) << "[Main] EventService stopped." << std::endl;
 
     (*loggerService) << "[Main] Destroying PluginService..." << std::endl;
     pluginService = nullptr;

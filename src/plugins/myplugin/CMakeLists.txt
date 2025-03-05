@@ -2,8 +2,7 @@ add_library(apertus_myplugin SHARED MyPlugin.cpp)
 
 target_include_directories(apertus_myplugin PUBLIC
     ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/src/core
-    ${CMAKE_SOURCE_DIR}/src/plugins/myplugin
+    ${CMAKE_SOURCE_DIR}/src/
 )
 
 # Link to core shared library

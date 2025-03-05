@@ -16,7 +16,6 @@ public:
 
     void RegisterPlugin(std::shared_ptr<IPlugin> plugin) override;
     void InitPlugins() override;
-    void StartPlugins() override;
     void StopPlugins() override;
 
     // static void SignalHandler(int signal);
@@ -24,15 +23,19 @@ public:
 private:
     IEventService* eventService;
     ILoggerService* logger;
+
     std::vector<std::shared_ptr<IPlugin>> plugins;
     std::vector<std::thread> pluginThreads;
-    // static std::atomic<bool> running;
+    std::vector<std::thread> eventThreads;
+
+    std::mutex initMutex;
+    std::condition_variable initCondition;
+
     std::atomic<int> initializedPlugins{0};
     std::atomic<int> totalPlugins{0};
-    std::condition_variable initCondition;
-    std::mutex initMutex;
-    bool shutdownCalled = false;
-    std::mutex shutdownMutex;
+    std::atomic<bool> shutdownCalled{false};
+    
+    void StartPluginEventListener(std::shared_ptr<IPlugin> plugin);
 };
 
 #endif // PLUGINSERVICE_H

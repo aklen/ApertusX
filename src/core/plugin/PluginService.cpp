@@ -1,7 +1,5 @@
 #include "PluginService.h"
-#include <csignal>
 #include <iostream>
-#include <sstream>
 
 PluginService::PluginService(IEventService* eventService, ILoggerService* logger)
     : eventService(eventService), logger(logger) {}
@@ -21,22 +19,20 @@ void PluginService::InitPlugins() {
             try {
                 (*logger) << "[PluginService] Initializing plugin: " << plugin->GetName() << std::endl;
                 plugin->Init();
+
                 {
                     std::lock_guard<std::mutex> lock(initMutex);
                     initializedPlugins++;
                 }
                 initCondition.notify_one();
 
-                // Wait until all plugins are initialized
-                std::unique_lock<std::mutex> lock(initMutex);
-                initCondition.wait(lock, [this] { return initializedPlugins.load() == totalPlugins.load(); });
+                (*logger) << "[PluginService] Starting event listener for: " << plugin->GetName() << std::endl;
+                StartPluginEventListener(plugin);
 
-                (*logger) << "[PluginService] Running plugin: " << plugin->GetName() << std::endl;
-                plugin->Run();
             } catch (const std::exception& e) {
-                (*logger) << "[PluginService] Plugin Init() or Run() failed: " << e.what() << std::endl;
+                (*logger) << "[PluginService] Plugin Init() failed: " << e.what() << std::endl;
             } catch (...) {
-                (*logger) << "[PluginService] Plugin Init() or Run() encountered an unknown error!" << std::endl;
+                (*logger) << "[PluginService] Plugin Init() encountered an unknown error!" << std::endl;
             }
         });
     }
@@ -45,18 +41,34 @@ void PluginService::InitPlugins() {
     std::unique_lock<std::mutex> lock(initMutex);
     initCondition.wait(lock, [this] { return initializedPlugins.load() == totalPlugins.load(); });
 
-    (*logger) << "[PluginService] All plugins initialized." << std::endl;
+    (*logger) << "[PluginService] All plugins initialized, starting Run()..." << std::endl;
+
+    // Start each plugin on a separate thread
+    for (auto& plugin : plugins) {
+        pluginThreads.emplace_back([plugin, this] {
+            try {
+                (*logger) << "[PluginService] Running plugin: " << plugin->GetName() << std::endl;
+                plugin->Run();
+            } catch (const std::exception& e) {
+                (*logger) << "[PluginService] Plugin Run() failed: " << e.what() << std::endl;
+            } catch (...) {
+                (*logger) << "[PluginService] Plugin Run() encountered an unknown error!" << std::endl;
+            }
+        });
+    }
 }
 
-void PluginService::StartPlugins() {
-    (*logger) << "[PluginService] Starting plugins..." << std::endl;
-    // No need to start plugins here as they are already started in InitPlugins
+void PluginService::StartPluginEventListener(std::shared_ptr<IPlugin> plugin) {
+    eventThreads.emplace_back([plugin, this] {
+        while (!shutdownCalled) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(50)); // Polling for events
+        }
+    });
 }
 
 void PluginService::StopPlugins() {
-    std::lock_guard<std::mutex> lock(shutdownMutex);
-    (*logger) << "[PluginService] StopPlugins()" << std::endl;
-    if (shutdownCalled) return; 
+    std::lock_guard<std::mutex> lock(initMutex);
+    if (shutdownCalled) return;
 
     shutdownCalled = true;
     (*logger) << "[PluginService] Stopping plugins..." << std::endl;
@@ -71,10 +83,15 @@ void PluginService::StopPlugins() {
         }
     }
 
+    for (auto& thread : eventThreads) {
+        if (thread.joinable()) {
+            thread.join();
+        }
+    }
+
     (*logger) << "[PluginService] All plugins have been stopped." << std::endl;
 }
 
 PluginService::~PluginService() {
-    (*logger) << "[PluginService] Destructor called, need to wait for plugins to stop: " << (shutdownCalled == true ? "false" : "true") << std::endl;
     StopPlugins();
 }

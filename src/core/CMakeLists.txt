@@ -3,6 +3,7 @@ add_library(apertus_core SHARED
     event/EventService.cpp
     logger/LoggerService.cpp
     plugin/PluginService.cpp
+    plugin/Plugin.cpp
     di/DependencyInjection.cpp
 )
 

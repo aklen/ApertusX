@@ -8,7 +8,7 @@
 #include "UrlUtils.h"
 
 GStreamerPlugin::GStreamerPlugin(IEventService* eventService, ILoggerService* logger) 
-    : eventService(eventService), logger(logger), pipeline(nullptr), running(false) {
+    : Plugin(eventService, logger), pipeline(nullptr), gStreamerIsRunning(false) {
     gst_init(nullptr, nullptr);
 }
 
@@ -21,31 +21,32 @@ std::thread::id GStreamerPlugin::GetThreadId() const {
 }
 
 void GStreamerPlugin::Init() {
+    Plugin::Init();  // call base class method to start event listener thread
     (*logger) << "[GStreamerPlugin]::Init() Initialized." << std::endl;
 
-    eventService->Subscribe("PlayAudio", [this](const std::string& uri) {
+    subscribe("PlayAudio", [this](const std::string& uri) {
         (*this->logger) << "[GStreamerPlugin]::Init() PlayAudio event received: " << uri << std::endl;
         this->Play(uri);
     });
 
-    eventService->Subscribe("PauseAudio", [this](const std::string&) {
+    subscribe("PauseAudio", [this](const std::string&) {
         (*this->logger) << "[GStreamerPlugin]::Init() PauseAudio event received." << std::endl;
         this->Pause();
     });
 
-    eventService->Subscribe("ResumeAudio", [this](const std::string&) {
+    subscribe("ResumeAudio", [this](const std::string&) {
         (*this->logger) << "[GStreamerPlugin]::Init() ResumeAudio event received." << std::endl;
         this->Resume();
     });
 
-    eventService->Subscribe("StopAudio", [this](const std::string&) {
+    subscribe("StopAudio", [this](const std::string&) {
         (*this->logger) << "[GStreamerPlugin]::Init() StopAudio event received." << std::endl;
         this->Stop();
     });
 }
 
 void GStreamerPlugin::Run() {
-    (*logger) << "[GStreamerPlugin] Running..." << std::endl;
+    (*logger) << "[GStreamerPlugin]::Run() Running on thread ID: " << GetThreadId() << std::endl;
     // while (running)
 	// {
 	// 	std::this_thread::sleep_for(std::chrono::milliseconds(20));
@@ -78,7 +79,7 @@ void GStreamerPlugin::Play(const std::string& uri) {
     std::thread([this] {
         (*logger) << "[GStreamerPlugin]::Play() Changing state to PLAYING..." << std::endl;
         gst_element_set_state(pipeline, GST_STATE_PLAYING);
-        running = true;
+        gStreamerIsRunning = true;
 
         eventService->Trigger("PlaybackStarted", "Playback started");
         (*logger) << "[GStreamerPlugin]::Play() Playback started." << std::endl;
@@ -89,13 +90,13 @@ void GStreamerPlugin::Play(const std::string& uri) {
 }
 
 void GStreamerPlugin::Stop(bool force) {
-    if (!running && !force) {
+    if (!gStreamerIsRunning && !force) {
         (*logger) << "[GStreamerPlugin]::Stop() Stop called, but playback is already stopped." << std::endl;
         return;
     }
 
     (*logger) << "[GStreamerPlugin]::Stop() Stopping playback..." << std::endl;
-    running = false; // Mark playback as stopped
+    gStreamerIsRunning = false; // Mark playback as stopped
 
     if (pipeline) {
         (*logger) << "[GStreamerPlugin]::Stop() Changing state to NULL..." << std::endl;
@@ -135,6 +136,7 @@ void GStreamerPlugin::Stop(bool force) {
 void GStreamerPlugin::Destroy() {
     (*logger) << "[GStreamerPlugin]::Destroy() Destroying..." << std::endl;
     Stop(true);
+    Plugin::Destroy();
     (*logger) << "[GStreamerPlugin]::Destroy() Destroyed." << std::endl;
 }
 
@@ -145,14 +147,14 @@ GStreamerPlugin::~GStreamerPlugin() {
 }
 
 void GStreamerPlugin::Pause() {
-    if (pipeline && running) {
+    if (pipeline && gStreamerIsRunning) {
         (*logger) << "[GStreamerPlugin]::Pause() Pausing playback..." << std::endl;
         gst_element_set_state(pipeline, GST_STATE_PAUSED);
     }
 }
 
 void GStreamerPlugin::Resume() {
-    if (pipeline && running) {
+    if (pipeline && gStreamerIsRunning) {
         (*logger) << "[GStreamerPlugin]::Resume() Resuming playback..." << std::endl;
         gst_element_set_state(pipeline, GST_STATE_PLAYING);
     }
@@ -168,7 +170,7 @@ void GStreamerPlugin::GStreamerMainLoop() {
     GstBus* bus = gst_element_get_bus(pipeline);
     GstMessage* msg;
 
-    while (running) {
+    while (gStreamerIsRunning) {
         (*logger) << "[GStreamerPlugin]::GStreamerMainLoop() Waiting for messages..." << std::endl;
         msg = gst_bus_timed_pop_filtered(bus, GST_SECOND, static_cast<GstMessageType>(GST_MESSAGE_ERROR | GST_MESSAGE_EOS | GST_MESSAGE_STATE_CHANGED | GST_MESSAGE_APPLICATION));
 
@@ -188,7 +190,7 @@ void GStreamerPlugin::GStreamerMainLoop() {
             (*logger) << "[GStreamerPlugin]::GStreamerMainLoop() Timeout, checking running flag..." << std::endl;
         }
 
-        if (!running) {
+        if (!gStreamerIsRunning) {
             (*logger) << "[GStreamerPlugin]::GStreamerMainLoop() Exiting loop..." << std::endl;
             break;
         }

@@ -2,6 +2,7 @@
 #define GSTREAMERPLUGIN_H
 
 #include "interfaces/IPlugin.h"
+#include "core/plugin/Plugin.h"
 #include "interfaces/IEventService.h"
 #include "interfaces/ILoggerService.h"
 #include <string>
@@ -10,7 +11,7 @@
 #include <fruit/fruit.h>
 #include <gst/gst.h>
 
-class GStreamerPlugin : public IPlugin {
+class GStreamerPlugin : public Plugin {
 public:
     INJECT(GStreamerPlugin(IEventService* eventService, ILoggerService* logger));
     ~GStreamerPlugin() override;
@@ -28,10 +29,8 @@ public:
     void Resume();  // Resume the current playback
 
 private:
-    IEventService* eventService;
-    ILoggerService* logger;
     GstElement* pipeline;
-    std::atomic<bool> running;
+    std::atomic<bool> gStreamerIsRunning;
     std::thread gstThread;
 
     static void OnBusMessage(GstBus* bus, GstMessage* msg, gpointer data);
