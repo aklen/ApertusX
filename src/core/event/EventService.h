@@ -18,6 +18,7 @@ public:
     INJECT(EventService(ILoggerService* logger));
 
     void Subscribe(const std::string& event, EventCallback callback) override;
+    void Unsubscribe(const std::string& event, EventCallback callback) override;
     void Trigger(const std::string& event, const std::string& param = "") override;
     void Start() override;
     void Stop() override;

@@ -9,6 +9,14 @@ void EventService::Subscribe(const std::string& eventName, EventCallback callbac
     subscribers[eventName].push_back(callback);
 }
 
+void EventService::Unsubscribe(const std::string& eventName, EventCallback callback) {
+    // std::lock_guard<std::mutex> lock(eventMutex);
+    // if (subscribers.find(eventName) != subscribers.end()) {
+    //     auto& callbacks = subscribers[eventName];
+    //     callbacks.erase(std::remove(callbacks.begin(), callbacks.end(), callback), callbacks.end());
+    // }
+}
+
 void EventService::Trigger(const std::string& eventName, const std::string& param) {
     {
         std::lock_guard<std::mutex> lock(eventMutex);

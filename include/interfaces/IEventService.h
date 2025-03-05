@@ -33,6 +33,13 @@ public:
     virtual void Subscribe(const std::string& eventName, EventCallback callback) = 0;
 
     /**
+     * @brief Unsubscribes from an event with a callback function.
+     * @param eventName The name of the event to unsubscribe from.
+     * @param callback The callback function to be removed from the event subscribers.
+     */
+    virtual void Unsubscribe(const std::string& eventName, EventCallback callback) = 0;
+
+    /**
      * @brief Triggers an event with an optional parameter.
      * @param eventName The name of the event to trigger.
      * @param param The optional parameter to pass to the event callback.
