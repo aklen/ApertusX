@@ -8,7 +8,7 @@ echo "🔧 Setting up the build environment..."
 SDK_PATH=$(xcrun --sdk macosx --show-sdk-path)
 
 # Set compiler flags
-CXX_FLAGS="-isysroot $SDK_PATH -stdlib=libc++"
+CXX_FLAGS="-isysroot $SDK_PATH -stdlib=libc++ -Os -march=native"
 BUILD_TYPE="Release"
 
 # Optional: Use Homebrew Clang if installed
@@ -24,7 +24,7 @@ export PKG_CONFIG_PATH="/opt/homebrew/Cellar/gtk4/4.16.12/lib/pkgconfig:$PKG_CON
 
 # Cleanup previous build
 echo "🧹 Cleaning up old build files..."
-rm -rf build
+# rm -rf build
 mkdir -p build
 cd build
 
