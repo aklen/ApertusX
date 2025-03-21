@@ -9,7 +9,7 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 SDK_PATH=$(xcrun --sdk macosx --show-sdk-path)
 
 # Set compiler flags
-CXX_FLAGS="-isysroot $SDK_PATH -stdlib=libc++"
+CXX_FLAGS="-isysroot $SDK_PATH -stdlib=libc++ -Os -march=native"
 BUILD_TYPE="Release"
 
 # Optional: Use Homebrew Clang if installed
