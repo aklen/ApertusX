@@ -1,10 +1,16 @@
 add_library(apertus_core SHARED
+    di/DependencyInjection.cpp
+
     config/ConfigService.cpp
     event/EventService.cpp
     logger/LoggerService.cpp
     plugin/PluginService.cpp
     plugin/Plugin.cpp
-    di/DependencyInjection.cpp
+    
+    replica/ReplicaService.cpp
+    replica/ReplicaFactory.cpp
+    replica/Replica.cpp
+    replica/replicas/AudioReplica.cpp
 )
 
 # Ensure correct include directories

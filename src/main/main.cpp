@@ -2,6 +2,8 @@
 #include "interfaces/IEventService.h"
 #include "interfaces/IPluginService.h"
 #include "interfaces/IPlugin.h"
+#include "interfaces/IReplicaService.h"
+#include "core/replica/ReplicaFactory.h"
 
 // std
 #include <atomic>
@@ -35,12 +37,13 @@ int main() {
     std::signal(SIGTERM, SignalHandler);
     
     // initialize DI container
-    fruit::Injector<IEventService, ILoggerService, IConfigService, IPluginService> injector(getApertusComponent);
+    fruit::Injector<IEventService, ILoggerService, IConfigService, IPluginService, IReplicaService> injector(getApertusComponent);
 
     // load services from DI container
     auto eventService = injector.get<IEventService*>();
     auto pluginService = injector.get<IPluginService*>();
     auto loggerService = injector.get<ILoggerService*>();
+    auto replicaService = injector.get<IReplicaService*>();
 
     // Start event processing
     eventService->Start();
@@ -78,13 +81,18 @@ int main() {
     auto myPlugin = std::make_shared<MyPlugin>(eventService, loggerService);
     pluginService->RegisterPlugin(myPlugin);
 
-    auto gstreamerPlugin = std::make_shared<GStreamerPlugin>(eventService, loggerService);
-    pluginService->RegisterPlugin(gstreamerPlugin);
+    // auto gstreamerPlugin = std::make_shared<GStreamerPlugin>(eventService, loggerService);
+    // pluginService->RegisterPlugin(gstreamerPlugin);
 
     // initialize and start plugins
     pluginService->InitPlugins();
 
     (*loggerService) << "[Main] Plugins initialized and started." << std::endl;
+
+    // test replica
+    auto myReplica = ReplicaFactory::CreateReplica("Player1");
+    replicaService->RegisterReplica(myReplica);
+    replicaService->SendReplica(*myReplica);
 
     // trigger start event
     eventService->Trigger("OnStart");
