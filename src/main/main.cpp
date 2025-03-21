@@ -2,6 +2,11 @@
 #include "interfaces/IEventService.h"
 #include "interfaces/IPluginService.h"
 #include "interfaces/IPlugin.h"
+#include "interfaces/ILoggerService.h"
+#include "interfaces/IConfigService.h"
+#include "interfaces/IReplicaService.h"
+#include "interfaces/IReplicaFactory.h"
+#include "interfaces/IReplicaRegistrar.h"
 
 // std
 #include <atomic>
@@ -35,7 +40,15 @@ int main() {
     std::signal(SIGTERM, SignalHandler);
     
     // initialize DI container
-    fruit::Injector<IEventService, ILoggerService, IConfigService, IPluginService> injector(getApertusComponent);
+    fruit::Injector<
+        IEventService,
+        ILoggerService,
+        IConfigService,
+        IPluginService
+        // IReplicaService,
+        // IReplicaFactory,
+        // IReplicaRegistrar,
+        > injector(getApertusComponent);
 
     // load services from DI container
     auto eventService = injector.get<IEventService*>();

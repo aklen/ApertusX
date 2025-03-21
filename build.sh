@@ -1,8 +1,9 @@
 #!/bin/bash
-
 set -e  # Stop script on error
-
 echo "🔧 Setting up the build environment..."
+
+# Get the directory of the script
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 # Detect macOS SDK path
 SDK_PATH=$(xcrun --sdk macosx --show-sdk-path)
@@ -28,12 +29,25 @@ rm -rf build
 mkdir -p build
 cd build
 
+# Build Live555 (if not already built)
+LIVE555_DIR="${SCRIPT_DIR}/external/live555"
+if [ ! -f "$LIVE555_DIR/liveMedia/libliveMedia.a" ]; then
+    echo "🛠️ Building Live555..."
+    cd $LIVE555_DIR
+    ./genMakefiles macosx-no-openssl # in case of macOS (in case of linux: `linux`)
+    make -j$(nproc)
+    cd -  # Go back to the build directory
+else
+    echo "✅ Live555 already built, skipping..."
+fi
+
 # Run CMake with proper flags
 echo "⚙️ Running CMake..."
 cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
       -DCMAKE_CXX_FLAGS="$CXX_FLAGS" \
       -DFRUIT_ENABLE_TESTS=OFF \
-      -DUSE_LIBCURL=ON ..
+      -DUSE_LIBCURL=ON \
+      -DNO_OPENSSL=ON ..
 
 # Build the project
 echo "🚀 Building the project..."

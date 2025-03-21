@@ -9,6 +9,15 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
+message(STATUS "CMAKE_BINARY_DIR: ${CMAKE_BINARY_DIR}")
+message(STATUS "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
+message(STATUS "CMAKE_CURRENT_SOURCE_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
+
+# Include external dependencies - Live555 CMake configuration
+option(NO_OPENSSL "Disable OpenSSL support" ON)  # Default is ON
+add_compile_definitions(NO_OPENSSL=$<BOOL:${NO_OPENSSL}>)
+include(cmake/Live555.cmake)
+
 # Google Fruit dependency
 add_subdirectory(external/fruit)
 

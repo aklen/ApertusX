@@ -28,6 +28,7 @@ add_library(apertus_plugin_gstreamer SHARED GStreamerPlugin.cpp)
 target_include_directories(apertus_plugin_gstreamer PUBLIC
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/include/helpers
+    ${CMAKE_SOURCE_DIR}/include/interfaces
     ${CMAKE_SOURCE_DIR}/src/
     ${GSTREAMER_INCLUDE_DIRS}   # GStreamer include directories
 )

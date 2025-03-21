@@ -33,3 +33,6 @@
 
 # build files
 build/
+
+# External
+external/live555
