@@ -25,7 +25,7 @@ export PKG_CONFIG_PATH="/opt/homebrew/Cellar/gtk4/4.16.12/lib/pkgconfig:$PKG_CON
 
 # Cleanup previous build
 echo "🧹 Cleaning up old build files..."
-rm -rf build
+# rm -rf build
 mkdir -p build
 cd build
 
