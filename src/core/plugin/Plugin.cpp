@@ -34,7 +34,7 @@ void Plugin::Destroy() {
 
 void Plugin::subscribe(const std::string& eventName, std::function<void(const std::string&)> callback) {
     std::lock_guard<std::mutex> lock(eventMutex);
-    eventCallbacks[eventName] = callback;  // 🔥 Eltároljuk a callback függvényt
+    eventCallbacks[eventName] = callback;  // store the callback for this event
 
     eventService->Subscribe(eventName, [this, eventName](const std::string& param) {
         std::lock_guard<std::mutex> lock(eventMutex);
@@ -59,11 +59,11 @@ void Plugin::EventProcessingLoop() {
 
             (*logger) << "[Plugin] Processing event: " << event.first << " with data: " << event.second << std::endl;
 
-            // 🔥 Meg kell hívni az eseményhez tartozó callback függvényt
+            // call the callback associated with the event
             auto it = eventCallbacks.find(event.first);
             if (it != eventCallbacks.end()) {
                 (*logger) << "[Plugin] Calling event callback for: " << event.first << std::endl;
-                it->second(event.second);  // Meghívjuk a callback függvényt
+                it->second(event.second);  // execute the callback
             } else {
                 (*logger) << "[Plugin] No callback found for event: " << event.first << std::endl;
             }
