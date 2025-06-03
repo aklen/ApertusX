@@ -177,7 +177,7 @@ void GStreamerPlugin::GStreamerMainLoop() {
         if (msg != nullptr) {
             (*logger) << "[GStreamerPlugin]::GStreamerMainLoop() Message received: " << GST_MESSAGE_TYPE_NAME(msg) << std::endl;
 
-            // 🔥 Ha a shutdown üzenetet kapjuk, kilépünk a loopból!
+            // Exit the loop if a shutdown message is received
             if (GST_MESSAGE_TYPE(msg) == GST_MESSAGE_APPLICATION) {
                 (*logger) << "[GStreamerPlugin]::GStreamerMainLoop() Shutdown message received, exiting..." << std::endl;
                 gst_message_unref(msg);
